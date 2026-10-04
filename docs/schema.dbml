@@ -1,0 +1,83 @@
+// Tempel di https://dbdiagram.io (New Diagram -> paste)
+
+Table teachers {
+  id uuid [pk]
+  name varchar [not null]
+  email varchar [unique, not null]
+  password_hash varchar [not null]
+  created_at timestamp [default: `now()`]
+}
+
+Table rooms {
+  id uuid [pk]
+  teacher_id uuid [not null, ref: > teachers.id]
+  code varchar(8) [unique, not null]
+  title varchar [not null]
+  status varchar [not null, default: 'active', note: 'active | closed']
+  created_at timestamp [default: `now()`]
+  closed_at timestamp
+}
+
+Table participants {
+  id uuid [pk]
+  room_id uuid [not null, ref: > rooms.id]
+  display_name varchar [not null]
+  joined_at timestamp [default: `now()`]
+  last_seen_at timestamp
+  is_online boolean [default: true]
+}
+
+Table reactions {
+  id uuid [pk]
+  room_id uuid [not null, ref: > rooms.id]
+  participant_id uuid [not null, ref: > participants.id]
+  type varchar [not null, note: 'paham | bingung | terlalu_cepat']
+  created_at timestamp [default: `now()`]
+}
+
+Table polls {
+  id uuid [pk]
+  room_id uuid [not null, ref: > rooms.id]
+  question varchar [not null]
+  status varchar [not null, default: 'draft', note: 'draft | open | closed']
+  created_at timestamp [default: `now()`]
+  closed_at timestamp
+}
+
+Table poll_options {
+  id uuid [pk]
+  poll_id uuid [not null, ref: > polls.id]
+  label varchar [not null]
+  is_correct boolean [note: 'null jika polling biasa, bukan kuis']
+  position int [not null]
+}
+
+Table poll_votes {
+  id uuid [pk]
+  poll_id uuid [not null, ref: > polls.id]
+  option_id uuid [not null, ref: > poll_options.id]
+  participant_id uuid [not null, ref: > participants.id]
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (poll_id, participant_id) [unique]
+  }
+}
+
+Table questions {
+  id uuid [pk]
+  room_id uuid [not null, ref: > rooms.id]
+  participant_id uuid [not null, ref: > participants.id, note: 'internal untuk rate limit, tidak pernah dikirim ke client']
+  content text [not null]
+  is_answered boolean [default: false]
+  is_hidden boolean [default: false]
+  created_at timestamp [default: `now()`]
+}
+
+Table picks {
+  id uuid [pk]
+  room_id uuid [not null, ref: > rooms.id]
+  participant_id uuid [not null, ref: > participants.id]
+  cycle int [not null, default: 1, note: 'siklus ke-n; naik saat semua sudah terpilih']
+  picked_at timestamp [default: `now()`]
+}
