@@ -17,7 +17,11 @@ export function requireAuth(
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
       sub: string;
+      role?: string;
     };
+    if (payload.role === "student") {
+      return res.status(403).json({ error: "Khusus pengajar." });
+    }
     req.teacherId = payload.sub;
     next();
   } catch {
