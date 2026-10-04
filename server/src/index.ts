@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import { prisma } from "./db.js";
 import { authRouter } from "./auth.js";
+import { roomsRouter } from "./rooms.js";
 
 const app = express();
 app.use(cors({ origin: "http://localhost:3000" }));
@@ -28,6 +29,7 @@ app.get("/db-check", async (_req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/rooms", roomsRouter);
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
