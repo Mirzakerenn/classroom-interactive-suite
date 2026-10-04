@@ -7,6 +7,7 @@ import { prisma } from "./db.js";
 import { authRouter } from "./auth.js";
 import { roomsRouter } from "./rooms.js";
 import { joinRouter } from "./join.js";
+import { setupSocket } from "./socket.js";
 
 const app = express();
 app.use(cors({ origin: "http://localhost:3000" }));
@@ -37,12 +38,12 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: "http://localhost:3000" },
 });
+setupSocket(io);
 
-io.on("connection", (socket) => {
-  console.log("client connected:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("client disconnected:", socket.id);
-  });
+// Saat server menyala, belum ada koneksi: semua peserta dianggap offline.
+await prisma.participant.updateMany({
+  where: { isOnline: true },
+  data: { isOnline: false },
 });
 
 const PORT = 4000;

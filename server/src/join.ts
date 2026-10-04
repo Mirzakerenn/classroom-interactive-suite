@@ -27,7 +27,7 @@ joinRouter.post("/", async (req, res) => {
   }
 
   const participant = await prisma.participant.create({
-    data: { roomId: room.id, displayName },
+    data: { roomId: room.id, displayName, isOnline: false },
   });
 
   const token = jwt.sign(

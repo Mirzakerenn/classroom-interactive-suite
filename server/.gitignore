@@ -9,3 +9,5 @@ node_modules
 .agents/
 skills-lock.json
 src/generated/
+
+scripts/
