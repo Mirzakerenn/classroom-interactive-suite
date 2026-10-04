@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoomStatus {
+  active
+  closed
+}
+
+enum ReactionType {
+  paham
+  bingung
+  terlalu_cepat
+}
+
+enum PollStatus {
+  draft
+  open
+  closed
+}
+
+model Teacher {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  rooms        Room[]
+
+  @@map("teachers")
+}
+
+model Room {
+  id           String        @id @default(uuid()) @db.Uuid
+  teacherId    String        @map("teacher_id") @db.Uuid
+  code         String        @unique @db.VarChar(8)
+  title        String
+  status       RoomStatus    @default(active)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  closedAt     DateTime?     @map("closed_at")
+  teacher      Teacher       @relation(fields: [teacherId], references: [id])
+  participants Participant[]
+  reactions    Reaction[]
+  polls        Poll[]
+  questions    Question[]
+  picks        Pick[]
+
+  @@map("rooms")
+}
+
+model Participant {
+  id          String     @id @default(uuid()) @db.Uuid
+  roomId      String     @map("room_id") @db.Uuid
+  displayName String     @map("display_name")
+  joinedAt    DateTime   @default(now()) @map("joined_at")
+  lastSeenAt  DateTime?  @map("last_seen_at")
+  isOnline    Boolean    @default(true) @map("is_online")
+  room        Room       @relation(fields: [roomId], references: [id])
+  reactions   Reaction[]
+  votes       PollVote[]
+  questions   Question[]
+  picks       Pick[]
+
+  @@map("participants")
+}
+
+model Reaction {
+  id            String       @id @default(uuid()) @db.Uuid
+  roomId        String       @map("room_id") @db.Uuid
+  participantId String       @map("participant_id") @db.Uuid
+  type          ReactionType
+  createdAt     DateTime     @default(now()) @map("created_at")
+  room          Room         @relation(fields: [roomId], references: [id])
+  participant   Participant  @relation(fields: [participantId], references: [id])
+
+  @@map("reactions")
+}
+
+model Poll {
+  id        String       @id @default(uuid()) @db.Uuid
+  roomId    String       @map("room_id") @db.Uuid
+  question  String
+  status    PollStatus   @default(draft)
+  createdAt DateTime     @default(now()) @map("created_at")
+  closedAt  DateTime?    @map("closed_at")
+  room      Room         @relation(fields: [roomId], references: [id])
+  options   PollOption[]
+  votes     PollVote[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  id        String     @id @default(uuid()) @db.Uuid
+  pollId    String     @map("poll_id") @db.Uuid
+  label     String
+  isCorrect Boolean?   @map("is_correct")
+  position  Int
+  poll      Poll       @relation(fields: [pollId], references: [id])
+  votes     PollVote[]
+
+  @@map("poll_options")
+}
+
+model PollVote {
+  id            String      @id @default(uuid()) @db.Uuid
+  pollId        String      @map("poll_id") @db.Uuid
+  optionId      String      @map("option_id") @db.Uuid
+  participantId String      @map("participant_id") @db.Uuid
+  createdAt     DateTime    @default(now()) @map("created_at")
+  poll          Poll        @relation(fields: [pollId], references: [id])
+  option        PollOption  @relation(fields: [optionId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  @@unique([pollId, participantId])
+  @@map("poll_votes")
+}
+
+model Question {
+  id            String      @id @default(uuid()) @db.Uuid
+  roomId        String      @map("room_id") @db.Uuid
+  participantId String      @map("participant_id") @db.Uuid
+  content       String
+  isAnswered    Boolean     @default(false) @map("is_answered")
+  isHidden      Boolean     @default(false) @map("is_hidden")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  room          Room        @relation(fields: [roomId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  @@map("questions")
+}
+
+model Pick {
+  id            String      @id @default(uuid()) @db.Uuid
+  roomId        String      @map("room_id") @db.Uuid
+  participantId String      @map("participant_id") @db.Uuid
+  cycle         Int         @default(1)
+  pickedAt      DateTime    @default(now()) @map("picked_at")
+  room          Room        @relation(fields: [roomId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  @@map("picks")
+}
